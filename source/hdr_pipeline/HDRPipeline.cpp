@@ -73,7 +73,7 @@ image<float> HDRPipeline::readLuminance()
 
 image<float> HDRPipeline::readDownsample()
 {
-	image<float> output(width, height);
+	image<float> output(width/2, height/2);
 	// copy back output data from GPU
 	throw_error(cudaMemcpy(data(output), downsample_buffer, width * height * 4U, cudaMemcpyDeviceToHost));
 	return output;
