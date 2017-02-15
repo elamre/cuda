@@ -63,7 +63,7 @@ __global__ void luminance_kernel(float * dest, const float * input, unsigned int
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 	if (x < width && y < height) {
 		const float * input_pixel = input + (width * y + x) * 3;
-		float lum = (0.2126f * input_pixel[0] + 0.7152f * input_pixel[1] + 0.0722f * input_pixel[2]);
+		float lum = (0.2126f * input_pixel[0] + 0.7152f * input_pixel[1] + 0.0722f * input_pixel[2]) ;
 		dest[width * y + x] = lum;
 	}
 }
@@ -72,9 +72,26 @@ __host__ void luminance(float * dest, const float * input, unsigned int width, u
 	const dim3 block_size = { 32, 32};
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y)};
 	luminance_kernel <<< num_blocks, block_size >>> (dest, input, width, height);
-
 }
 
+#define F 2
+__global__ void downsample_kernel(float * output, const float * luminance, unsigned int width, unsigned int height) {
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+	float sum = 0.0f;
+	for (int j = 0; j < F; j++) {
+		for (int i = 0; i < F; i++) {
+			sum += luminance[(y*F + j) * width + (x * F + i)];
+		}
+	}
+	output[y * width / F + x] = sum / (F * F);
+}
+
+__host__ void downsample(float * output, const float * luminance, unsigned int width, unsigned int height) {
+	const dim3 block_size = { 32, 32 };
+	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y) };
+	downsample_kernel << <num_blocks, block_size >> > (output, luminance, width, height);
+}
 // TODO: implement gaussian blur for light bloom
 
 __global__ void tonemap_kernel(uchar4* tonemapped, uchar4* brightpass, const float* src, unsigned int width, unsigned int height, float exposure, float brightpass_thdesthold)
