@@ -79,7 +79,7 @@ __global__ void downsample_kernel(float * output, const float * luminance, unsig
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 	float sum = 0.0f;
-	if (x >= width || y >= height) return;
+	if (x >= width/F || y >= height/F) return;
 	for (int j = 0; j < F; j++) {
 		for (int i = 0; i < F; i++) {
 			sum += luminance[(y*F + j) * width + (x * F + i)];
