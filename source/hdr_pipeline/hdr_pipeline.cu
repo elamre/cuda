@@ -71,7 +71,7 @@ __global__ void luminance_kernel(float * dest, const float * input, unsigned int
 __host__ void luminance(float * dest, const float * input, unsigned int width, unsigned int height) {
 	const dim3 block_size = { 32, 32};
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y)};
-	luminance_kernel << num_blocks, block_size >> (dest, input, width, height);
+	luminance_kernel <<< num_blocks, block_size >>> (dest, input, width, height);
 
 }
 

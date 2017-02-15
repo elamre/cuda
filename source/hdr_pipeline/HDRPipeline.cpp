@@ -38,7 +38,7 @@ float HDRPipeline::downsample()
 {
 	//luminance
 	// TODO: implement downsampling and return average luminance
-	luminance()
+	luminance(d_luminance_image, d_input_image, width, height);
 	return 1.0;
 }
 
