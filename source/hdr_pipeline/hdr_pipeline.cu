@@ -63,7 +63,7 @@ __global__ void luminance_kernel(float * dest, const float * input, unsigned int
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 	if (x < width && y < height) {
 		const float * input_pixel = input + (width * y + x) * 3;
-		float lum = (input_pixel[0] + input_pixel[1] + input_pixel[2]) / 3.0f;
+		float lum = (0.2126f * input_pixel[0] + 0.7152f * input_pixel[1] + 0.0722f * input_pixel[2]);
 		dest[width * y + x] = lum;
 	}
 }
