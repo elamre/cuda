@@ -85,7 +85,7 @@ __global__ void downsample_kernel(float * output, const float * luminance, unsig
 			sum += luminance[(y*F + j) * width + (x * F + i)];
 		}
 	}
-	if (!threadIdx.x) printf("x %d y %d \n", x, y);
+	if (!threadIdx.x && !threadIdx.y) printf("x %d y %d \n", x, y);
 	output[y * width / F + x] = sum / (F * F);
 }
 
