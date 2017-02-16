@@ -75,7 +75,7 @@ __host__ void luminance(float * dest, const float * input, unsigned int width, u
 }
 
 #define F 2
-__global__ void downsample_kernel(float * output, const float * luminance, unsigned int width, unsigned int height) {
+__global__ void downsample_kernel(float * output, float * luminance, unsigned int width, unsigned int height) {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 	float sum = 0.0f;
