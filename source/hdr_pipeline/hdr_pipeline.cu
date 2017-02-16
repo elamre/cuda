@@ -97,7 +97,7 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 		width = (width > 2) ? width / 2 : 2;
 		height = (height > 2) ? height / 2 : 2;
 		ping = !ping;
-	} while (width != 2 && height != 2);
+	} while (width != 2 || height != 2);
 }
 // TODO: implement gaussian blur for light bloom
 
