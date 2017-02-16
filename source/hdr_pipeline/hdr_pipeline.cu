@@ -79,7 +79,7 @@ __global__ void downsample_kernel(float * output, float * luminance, unsigned in
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	//printf("output %p luminance %p\n", output, luminance);
+	
 	
 	float sum = 0.0f;
 	if (x >= width / F || y >= height / F) return;
@@ -88,11 +88,12 @@ __global__ void downsample_kernel(float * output, float * luminance, unsigned in
 			sum += luminance[(y*F + j) * pitch + (x * F + i)];
 		}
 	}
-	output[0] = sum / (F*F);
-	//output[y * width / F + x] = sum / (F * F);
+	//output[0] = sum / (F*F);
+	output[y * pitch / F + x] = sum / (F * F);
 }
 
 __host__ void downsample(float * output, float * luminance, unsigned int width, unsigned int height) {
+	printf("output %p luminance %p\n", output, luminance);
 	const dim3 block_size = { 32, 32 };
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y) };
 	unsigned int pitch = width;
