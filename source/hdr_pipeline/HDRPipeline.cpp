@@ -43,10 +43,11 @@ float HDRPipeline::downsample()
 	// TODO: implement downsampling and return average luminance
 	void luminance(float * dest, const float * input, unsigned int width, unsigned int height);
 	void downsample(float * output, float * luminance, unsigned int width, unsigned int height);
-	printf("output %p luminance %p\n", t_image.get(), d_luminance_image.get());
+	
 	luminance(d_luminance_image.get(), d_input_image.get(), width, height);
-	printf("output %p luminance %p\n", t_image.get(), d_luminance_image.get());
+	printf("output %p luminance %p\n", (float *) downsample_buffer, d_luminance_image.get());
 	downsample((float*)downsample_buffer, d_luminance_image.get(), width, height);
+	printf("output %p luminance %p\n", (float *)downsample_buffer, d_luminance_image.get());
 	return 1.0;
 }
 
