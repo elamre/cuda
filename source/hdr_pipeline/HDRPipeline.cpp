@@ -28,7 +28,7 @@ HDRPipeline::HDRPipeline(unsigned int width, unsigned int height)
 	  width(width),
 	  height(height)
 {
-	throw_error(cudaMalloc(&downsample_buffer, width * height / 4 * sizeof(float)));
+	throw_error(cudaMalloc(&downsample_buffer, width * height * sizeof(float) / 4));
 }
 
 void HDRPipeline::consume(const float* input_image)
