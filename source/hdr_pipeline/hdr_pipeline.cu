@@ -85,6 +85,7 @@ __global__ void downsample_kernel(float * output, const float * luminance, unsig
 			sum += luminance[(y*F + j) * width + (x * F + i)];
 		}
 	}
+	output[0] = sum / (F*F);
 	//output[y * width / F + x] = sum / (F * F);
 }
 
