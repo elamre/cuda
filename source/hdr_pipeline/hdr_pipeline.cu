@@ -82,7 +82,7 @@ __global__ void downsample_kernel(float * output, float * luminance, unsigned in
 	if (x >= width / F || y >= height / F) return;
 	for (int j = 0; j < F; j++) {
 		for (int i = 0; i < F; i++) {
-			sum += luminance[(y*F + j) * inputPutch + (x * F + i)];
+			sum += luminance[(y*F + j) * inputPitch + (x * F + i)];
 		}
 	}
 	output[y * outputPitch/F + x] = sum / (F * F);
