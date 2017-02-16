@@ -17,27 +17,18 @@ namespace
 	}
 }
 
-void* downsample_buffer;
+void * downsample_buffer;
+
 HDRPipeline::HDRPipeline(unsigned int width, unsigned int height)
 	: d_input_image(cudaMalloc<float>(width * height * 3)),
-	d_luminance_image(cudaMalloc<float>(width * height)),
-	d_buffer_image(cudaMalloc<float>(width * height)),
-	d_brightpass_image(cudaMalloc<uchar4>(width * height)),
-	d_output_image(cudaMalloc<uchar4>(width * height)),
-	width(width),
-	height(height)
+	  d_luminance_image(cudaMalloc<float>(width * height)),
+	  d_buffer_image(cudaMalloc<float>(width * height)),
+	  d_brightpass_image(cudaMalloc<uchar4>(width * height)),
+	  d_output_image(cudaMalloc<uchar4>(width * height)),
+	  width(width),
+	  height(height)
 {
-
-	// we need a memory buffer on the GPU to store the intermediate images we compute while downscaling -> CudaMalloc
-	// we use floats, and only one color channel (luminance). Image is half size in width, and half in height -> 1/4 of original size
-
-	//	cudaError_t res = cudaMalloc(&downsample_buffer, width*height / 4.0f * sizeof(float));
-	//	if (res != cudaSuccess){
-	//		throw std::runtime_error("something went wrong with downscaling memory allocation");
-	//	}
-
-	// this function does the same thing as the above, but a lot more concise
-	throw_error(cudaMalloc(&downsample_buffer, width*height / 4 * sizeof(float)));
+	throw_error(cudaMalloc(&downsample_buffer, width * height * sizeof(float) / 4));
 }
 
 void HDRPipeline::consume(const float* input_image)
@@ -48,17 +39,15 @@ void HDRPipeline::consume(const float* input_image)
 
 float HDRPipeline::downsample()
 {
-	// implement downsampling and return average luminance
-	// call the function from hdr_pipeline.cu
-	// dest and input buffers: see HDRPipeline declaration in header file
-	void luminance(float* dest, const float* input, unsigned int width, unsigned int height);
-	luminance(d_luminance_image.get(),
-		d_input_image.get(),
-		width,
-		height);
-
-	void downsample(float* dest, float* input, unsigned int width, unsigned int height);
+	//luminance
+	// TODO: implement downsampling and return average luminance
+	void luminance(float * dest, const float * input, unsigned int width, unsigned int height);
+	void downsample(float * output, float * luminance, unsigned int width, unsigned int height);
+	
+	luminance(d_luminance_image.get(), d_input_image.get(), width, height);
+	printf("output %p luminance %p\n", (float *) downsample_buffer, d_luminance_image.get());
 	downsample((float*)downsample_buffer, d_luminance_image.get(), width, height);
+	printf("output %p luminance %p\n", (float *)downsample_buffer, d_luminance_image.get());
 	return 1.0;
 }
 
@@ -87,9 +76,9 @@ image<float> HDRPipeline::readLuminance()
 
 image<float> HDRPipeline::readDownsample()
 {
-	image<float> output(width / 2, height / 2);
+	image<float> output(width/2, height/2);
 	// copy back output data from GPU
-	throw_error(cudaMemcpy(data(output), downsample_buffer, width / 2 * height / 2 * 4U, cudaMemcpyDeviceToHost));
+	throw_error(cudaMemcpy(data(output), downsample_buffer, width/2 * height/2 * 4U, cudaMemcpyDeviceToHost));
 	return output;
 }
 
