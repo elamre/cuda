@@ -79,7 +79,7 @@ __global__ void downsample_kernel(float * output, float * luminance, unsigned in
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	printf("output %p luminance %p\n", output, luminance);
+	//printf("output %p luminance %p\n", output, luminance);
 	
 	float sum = 0.0f;
 	if (x >= width / F || y >= height / F) return;
