@@ -85,7 +85,7 @@ __global__ void downsample_kernel(float * output, const float * luminance, unsig
 			sum += luminance[(y*F + j) * width + (x * F + i)];
 		}
 	}
-	output[y * width / F + x] = sum / (F * F);
+	//output[y * width / F + x] = sum / (F * F);
 }
 
 __host__ void downsample(float * output, float * luminance, unsigned int width, unsigned int height) {
@@ -94,7 +94,7 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 	bool ping = false;
 	while (width != 1 || height != 1) {
 		printf("width %d height %d\n", width, height);
-		//downsample_kernel <<<num_blocks, block_size>>> ((ping)? output : luminance, (ping) ? luminance : output, width, height);
+		downsample_kernel <<<num_blocks, block_size>>> ((ping)? output : luminance, (ping) ? luminance : output, width, height);
 		width = (width > 1) ? width / 2 : 1;
 		height = (height > 1) ? height / 2 : 1;
 		ping = !ping;	
