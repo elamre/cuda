@@ -101,7 +101,7 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 		ping = !ping;
 		printf("width %d height %d\n", width, height);
 		cudaDeviceSynchronize();
-	} while (width != 1 && height != 1);
+	} while (width != 1 || height != 1);
 }
 // TODO: implement gaussian blur for light bloom
 
