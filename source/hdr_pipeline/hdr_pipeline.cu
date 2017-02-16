@@ -100,9 +100,9 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 	while (width != 1 || height != 1) {
 		//downsample_kernel << <num_blocks, block_size >> > ((ping) ? output : luminance, (ping) ? luminance : output, width, height, pitch);
 		if (ping) {
-			downsample_kernel << <num_blocks, block_size >> > (luminance, output, width, height, pitch);
+			downsample_kernel << <num_blocks, block_size >> > (luminance, luminance, width, height, pitch);
 		} else {
-			downsample_kernel << <num_blocks, block_size >> > (output, luminance, width, height, pitch/2);
+			downsample_kernel << <num_blocks, block_size >> > (luminance, luminance, width, height, pitch/2);
 		}
 		width = (width > 1) ? width / 2 : 1;
 		height = (height > 1) ? height / 2 : 1;
