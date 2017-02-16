@@ -75,14 +75,17 @@ __host__ void luminance(float * dest, const float * input, unsigned int width, u
 }
 
 #define F 2
-__global__ void downsample_kernel(float * output, float * luminance, unsigned int width, unsigned int height) {
+__global__ void downsample_kernel(float * output, float * luminance, unsigned int width, unsigned int height, unsigned int pitch) {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	printf("output %p luminance %p\n", output, luminance);
+	
 	float sum = 0.0f;
-	if (x >= width/F || y >= height/F) return;
+	if (x >= width / F || y >= height / F) return;
 	for (int j = 0; j < F; j++) {
 		for (int i = 0; i < F; i++) {
-			sum += luminance[(y*F + j) * width + (x * F + i)];
+			sum += luminance[(y*F + j) * pitch + (x * F + i)];
 		}
 	}
 	output[0] = sum / (F*F);
@@ -92,10 +95,15 @@ __global__ void downsample_kernel(float * output, float * luminance, unsigned in
 __host__ void downsample(float * output, float * luminance, unsigned int width, unsigned int height) {
 	const dim3 block_size = { 32, 32 };
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y) };
+	unsigned int pitch = width;
 	bool ping = false;
 	while (width != 1 || height != 1) {
-		printf("width %d height %d\n", width, height);
-		downsample_kernel <<<num_blocks, block_size>>> ((ping)? output : luminance, (ping) ? luminance : output, width, height);
+		//downsample_kernel << <num_blocks, block_size >> > ((ping) ? output : luminance, (ping) ? luminance : output, width, height, pitch);
+		if (ping) {
+			downsample_kernel << <num_blocks, block_size >> > (luminance, output, width, height, pitch);
+		} else {
+			downsample_kernel << <num_blocks, block_size >> > (output, luminance, width, height, pitch);
+		}
 		width = (width > 1) ? width / 2 : 1;
 		height = (height > 1) ? height / 2 : 1;
 		ping = !ping;	
