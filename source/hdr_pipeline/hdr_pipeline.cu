@@ -93,7 +93,7 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 	const dim3 block_size = { 32, 32 };
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y) };
 	unsigned int pitch = width;
-	bool ping = true;
+	bool ping = false;
 	while (width != 1 || height != 1) {
 		//downsample_kernel << <num_blocks, block_size >> > ((ping) ? output : luminance, (ping) ? luminance : output, width, height, pitch);
 		if (ping) {
