@@ -93,13 +93,12 @@ __host__ void downsample(float * output, float * luminance, unsigned int width, 
 	const dim3 block_size = { 32, 32 };
 	const dim3 num_blocks = { divup(width, block_size.x), divup(height, block_size.y) };
 	bool ping = false;
-	printf("Start to test\n");
 	while (width != 1 || height != 1) {
+		printf("width %d height %d\n", width, height);
 		downsample_kernel <<<num_blocks, block_size>>> ((ping)? output : luminance, (ping) ? luminance : output, width, height);
 		width = (width > 1) ? width / 2 : 1;
 		height = (height > 1) ? height / 2 : 1;
-		ping = !ping;
-		printf("width %d height %d\n", width, height);
+		ping = !ping;	
 		cudaDeviceSynchronize();
 	} 
 }
