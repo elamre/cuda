@@ -24,7 +24,7 @@ namespace
 		return memory;
 	}
 }
-
+void* downsample_buffer;
 HDRPipeline::HDRPipeline(unsigned int width, unsigned int height)
 	: width(width),
 	  height(height),
@@ -36,6 +36,7 @@ HDRPipeline::HDRPipeline(unsigned int width, unsigned int height)
 	  d_blurred_image(cudaMallocZeroed<float>(width * height * 3)),
 	  d_output_image(cudaMallocZeroed<float>(width * height * 3))
 {
+	throw_error(cudaMalloc(&downsample_buffer, width*height * sizeof(float) / 4));
 }
 
 void HDRPipeline::consume(const float* input_image)
@@ -49,13 +50,22 @@ void HDRPipeline::computeLuminance()
 	void luminance(float* dest, const float* src, unsigned int width, unsigned int height);
 
 	luminance(d_luminance_image.get(), d_input_image.get(), width, height);
+
 }
 
 float HDRPipeline::downsample()
 {
-	float downsample(float* buffer, float* src, unsigned int width, unsigned int height);
+	void luminance(float* dest, const float* input, unsigned int width, unsigned int height);
+	luminance(d_luminance_image.get(),
+		d_input_image.get(),
+		width,
+		height);
 
-	return downsample(d_downsample_buffer.get(), d_luminance_image.get(), width, height);
+	float downsample(float* dest, float* input, unsigned int width, unsigned int height);
+	float lum = downsample((float*)downsample_buffer, d_luminance_image.get(), width, height);
+	printf("LUM: %f \n", lum);
+
+	return lum;
 }
 
 void HDRPipeline::tonemap(float exposure, float brightpass_threshold)
