@@ -98,7 +98,7 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 	const unsigned int pitchLuminance = width;
 
 	// first iteration
-	downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchLuminance, pitchBuf);
+	downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchBuf, pitchLuminance);
 	int ping = 0; //result in dest buffer
 
 	while (width != 1 || height != 1) {
@@ -113,12 +113,14 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 			height = 1;
 			printf("height < 1 \n");
 		}
+
+		printf(" width %d | height %d \n", width, height);
 		if (ping) {
-			downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchLuminance, pitchBuf);
+			downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchBuf, pitchLuminance);
 		}
 		else {
 			// now ping-pong; result will be in the luminance buffer
-			downsample_kernel << <num_blocks, block_size >> >(luminance, dest, width, height, pitchBuf, pitchLuminance);
+			downsample_kernel << <num_blocks, block_size >> >(luminance, dest, width, height, pitchLuminance, pitchBuf);
 		}
 		ping = !ping;
 	}
@@ -129,8 +131,10 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 	}
 
 	// return the grayscale value
-	printf("grayscale value: %f \n", dest[0]);
-	return dest[0];
+	//printf("grayscale value: %f \n", dest[0]);
+	float average;
+	cudaMemcpy(&average, dest, sizeof(float), cudaMemcpyDeviceToHost);
+	return average;
 }
 
 
