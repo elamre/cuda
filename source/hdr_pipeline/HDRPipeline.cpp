@@ -90,7 +90,7 @@ void HDRPipeline::blur()
 {
 	void gaussian_blur(float* dest, const float* src, unsigned int width, unsigned int height);
 
-	gaussian_blur(d_blurred_image.get(), d_luminance_image.get(), width, height);
+	gaussian_blur(d_blurred_image.get(), d_tonemapped_image.get(), width, height);
 }
 
 void HDRPipeline::compose()
