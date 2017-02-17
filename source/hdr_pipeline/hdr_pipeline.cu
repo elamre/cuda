@@ -167,7 +167,7 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 //	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
 	
 	for (int i = 0, l = 32; i < l; i++) {
-		if ((i + x - l/2 >= 0) && (i + x + l/2 < width)) {
+		if ((i + x * 3 - l/2 >= 0) && (i + x * 3 + l/2 < width)) {
 			sum[0] += src[3 * y*inputPitch + 3 * x + i + 0] * weights[i];
 			sum[1] += src[3 * y*inputPitch + 3 * x + i + 1] * weights[i];
 			sum[2] += src[3 * y*inputPitch + 3 * x + i + 2] * weights[i];
