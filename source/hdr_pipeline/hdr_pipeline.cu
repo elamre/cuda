@@ -23,19 +23,114 @@ namespace
 }
 
 
-
-void luminance(float* dest, const float* src, unsigned int width, unsigned int height)
+// kernel that computes average luminance of a pixel
+__global__ void luminance_kernel(float* dest, const float* input, unsigned int width, unsigned int height)
 {
-	// TODO: compute luminance of src image
+	// each thread needs to know on which pixels to work -> get absolute coordinates of the thread in the grid
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	// input is stored as array (row-wise). Load the pixel values
+	// offset of first pixel  = y coordinates * width of block (b/c full rows already read) + x coordinates
+
+	if (x < width && y < height) {
+		const float* input_pixel = input + 3 * (width*y + x); // *3 b/c three colors (=bytes) per pixel.
+
+		float lum = 0.21f * input_pixel[0] + 0.72f * input_pixel[1] + 0.07f * input_pixel[2];  //compensate for human vision
+
+		dest[width *y + x] = lum; //store the results. not * 3 b/c only luminance, no colors
+	}
 }
 
+// get the required number of blocks to cover the whole image, and run the kernel on all blocks
+void luminance(float* dest, const float* input, unsigned int width, unsigned int height) {
+	const dim3 block_size = { 32, 32 };
+	// calculate number of blocks required to process the whole image -> round up to the next multiple of 32 (full block)
+	const dim3 num_blocks = {
+		divup(width, block_size.x),
+		divup(height, block_size.y)
+	};
 
+	// launch the kernel that we wrote above for all the blocks
+	luminance_kernel << <num_blocks, block_size >> >(dest, input, width, height);
 
-float downsample(float* buffer, float* src, unsigned int width, unsigned int height)
-{
-	// TODO: downsample and return average luminance
+	// this 'downsampling' step takes about 1.3ms on a GT 730m
+	// now we want to run this in a hierarchical way: reduce the image in each step
+	// -> launch blocks on the images, reducing its size each step until we end up with a 1x1 color
+	// -> we need to allocate memory for a buffer in the HDRPipeline object declaration
+}
 
-	return 1.0f;
+__global__ void downsample_kernel(float* dest, float* input, unsigned int width, unsigned int height, unsigned int inputPitch, unsigned int outputPitch) {
+	// each thread needs to know on which pixels to work -> get absolute coordinates of the thread in the grid
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	int F = 2; //width of downsampling square (F^2 = number of pixels to be pooled together)
+
+			   //printf(" KERNEL width %d | height %d \n", width, height);
+	if ((x >= width / F) || (y >= height / F))
+		return;
+
+	float sum = 0.0f;
+
+	// 2D version: add pixels in 2x2 block, calculate the average. Jump with F so different threads don't operate on the same pixels.
+
+	for (int j = 0; j<F; j++) {
+		for (int i = 0; i < F; i++) {
+			// current pixel : (x+i, y+j)
+			sum += input[(y*F + j) * inputPitch + x*F + i];
+		}
+	}
+	dest[y* outputPitch + x] = sum / (F * F);
+}
+
+// get the required number of blocks to cover the whole image, and run the kernel on all blocks
+float downsample(float* dest, float* luminance, unsigned int width, unsigned int height) {
+	const dim3 block_size = { 32, 32 };
+	// calculate number of blocks required to process the whole image -> round up to the next multiple of 32 (full block)
+	const dim3 num_blocks = {
+		divup(width, block_size.x),
+		divup(height, block_size.y)
+	};
+
+	// Store original width = width of buffer
+	const unsigned int pitchBuf = width / 2;
+	const unsigned int pitchLuminance = width;
+
+	// first iteration
+	downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchLuminance, pitchBuf);
+	int ping = 0; //result in dest buffer
+
+	while (width != 1 || height != 1) {
+		// result will be in the dest buffer
+		width = width / 2;
+		height = height / 2;
+		if (width < 1) {
+			width = 1;
+			printf("width < 1 \n");
+		}
+		if (height < 1) {
+			height = 1;
+			printf("height < 1 \n");
+		}
+		if (ping) {
+			downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchLuminance, pitchBuf);
+		}
+		else {
+			// now ping-pong; result will be in the luminance buffer
+			downsample_kernel << <num_blocks, block_size >> >(luminance, dest, width, height, pitchBuf, pitchLuminance);
+		}
+		ping = !ping;
+	}
+
+	// make sure the result is stored in dest
+	if (ping) {
+		cudaMemcpy(luminance, dest, 1, cudaMemcpyDeviceToDevice);
+	}
+
+	// return the grayscale value
+	printf("grayscale value: %f \n", dest[0]);
+	return dest[0];
 }
 
 
