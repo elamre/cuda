@@ -167,13 +167,12 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 //	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
 	
 	for (int i = 0, l = 32; i < l; i++) {
-		if ((i + x * 3 - l/2 >= 0) && (i + x * 3 + l/2 < width)) {
-			sum[0] += src[3 * y*inputPitch + 3 * x + i + 0] * weights[i];
-			sum[1] += src[3 * y*inputPitch + 3 * x + i + 1] * weights[i];
-			sum[2] += src[3 * y*inputPitch + 3 * x + i + 2] * weights[i];
+		if ((i + x - l/2 >= 0) && (i + x + l/2 < width)) {
+			sum[0] += src[3 * y*inputPitch + 3 * x + 3 * i + 0] * weights[i];
+			sum[1] += src[3 * y*inputPitch + 3 * x + 3 * i + 1] * weights[i];
+			sum[2] += src[3 * y*inputPitch + 3 * x + 3 * i + 2] * weights[i];
 		}
 	} 
-	if (!threadIdx.x && !threadIdx.y) if (sum[0] != 0 || sum[1] != 0 || sum[2] != 0) printf("[%f, %f, %f]\n", sum[0],sum[1],sum[2]);
 	dest[3 * y * outputPitch + 3 * x + 0] = sum[0];
 	dest[3 * y * outputPitch + 3 * x + 1] = sum[1];
 	dest[3 * y * outputPitch + 3 * x + 2] = sum[2];
