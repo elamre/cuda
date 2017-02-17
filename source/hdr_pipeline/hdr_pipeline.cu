@@ -150,7 +150,7 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width, unsigned int height, unsigned int inputPitch, unsigned int outputPitch)
 {
 	constexpr float weights[] = {  //weights in one dimension -> 33x33 filter
-								   //  -16           -15         -14          -13          -12          -11          -10           -9           -8           -7           -6           -5           -4           -3           -2           -1
+		//  -16           -15         -14          -13          -12          -11          -10           -9           -8           -7           -6           -5           -4           -3           -2           -1
 		0.00288204f, 0.00418319f, 0.00592754f, 0.00819980f, 0.01107369f, 0.01459965f, 0.01879116f, 0.02361161f, 0.02896398f, 0.03468581f, 0.04055144f, 0.04628301f, 0.05157007f, 0.05609637f, 0.05957069f, 0.06175773f,
 		//    0
 		0.06250444f,
@@ -170,7 +170,7 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 			sum += src[y*inputPitch + x + i] * weights[i];
 			if (!threadIdx.x && !threadIdx.y) {
 				for (int b = 0; b < 32; b++) {
-					printf("%f (%f), ", src[y*inputPitch + x + i], weights[i])
+					printf("%f (%f), ", src[y*inputPitch + x + i], weights[i]);
 				}
 				printf("\nSum %f\n", sum);
 			}
