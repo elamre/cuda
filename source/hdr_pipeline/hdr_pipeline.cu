@@ -164,12 +164,12 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 
 	float sum = 0.0f;
 
-	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
+//	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
+	for (int i = 0, l = 32; i < l; i++) {
 		if ((i + x - l/2 >= 0) && (i + x + l/2 < width)) {
 			sum += src[y*inputPitch + x + i] * weights[i];
 		}
 	} 
-	printf("sum: %d \n", sum);
 	dest[y* outputPitch + x] = sum;
 }
 
