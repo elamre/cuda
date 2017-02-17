@@ -149,8 +149,8 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 
 __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width, unsigned int height, unsigned int inputPitch, unsigned int outputPitch)
 {
-	constexpr float weights[] = {  //weights in one dimension -> 33x33 filter
-		//  -16           -15         -14          -13          -12          -11          -10           -9           -8           -7           -6           -5           -4           -3           -2           -1
+	const float weights[] = {  //weights in one dimension -> 33x33 filter
+							   //  -16           -15         -14          -13          -12          -11          -10           -9           -8           -7           -6           -5           -4           -3           -2           -1
 		0.00288204f, 0.00418319f, 0.00592754f, 0.00819980f, 0.01107369f, 0.01459965f, 0.01879116f, 0.02361161f, 0.02896398f, 0.03468581f, 0.04055144f, 0.04628301f, 0.05157007f, 0.05609637f, 0.05957069f, 0.06175773f,
 		//    0
 		0.06250444f,
@@ -162,20 +162,65 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	float sum[3] = { 0 };
+	if (!threadIdx.x)
+		printf("x %d | y %d \n", x, y);
 
-//	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
-	
-	for (int i = 0, l = 32; i < l; i++) {
-		if ((i + x - l/2 >= 0) && (i + x + l/2 < width)) {
-			sum[0] += src[3 * y*inputPitch + 3 * x + 3 * i + 0] * weights[i];
-			sum[1] += src[3 * y*inputPitch + 3 * x + 3 * i + 1] * weights[i];
-			sum[2] += src[3 * y*inputPitch + 3 * x + 3 * i + 2] * weights[i];
+	float sumR = 0.0f;
+	float sumG = 0.0f;
+	float sumB = 0.0f;
+
+	for (int i = -16; i <= 16; i++) {
+		if ((3 * (x + i) > 0) && (3 * (x + i) < 3 * width)) {
+			sumR += src[3 * y*inputPitch + 3 * (x + i)] * weights[i + 16];
+			sumG += src[3 * y*inputPitch + 3 * (x + i) + 1] * weights[i + 16];
+			sumB += src[3 * y*inputPitch + 3 * (x + i) + 2] * weights[i + 16];
 		}
-	} 
-	dest[3 * y * outputPitch + 3 * x + 0] = sum[0];
-	dest[3 * y * outputPitch + 3 * x + 1] = sum[1];
-	dest[3 * y * outputPitch + 3 * x + 2] = sum[2];
+	}
+	if (!threadIdx.x) {
+		printf("sumR: %f | sumG: %f | sumB: %f \n", sumR, sumG, sumB);
+	}
+
+	dest[3 * y* outputPitch + 3 * x] = sumR;
+	dest[3 * y* outputPitch + 3 * x + 1] = sumG;
+	dest[3 * y* outputPitch + 3 * x + 2] = sumB;
+}
+
+__global__ void blur_kernel_y(float* dest, const float* src, unsigned int width, unsigned int height, unsigned int inputPitch, unsigned int outputPitch)
+{
+	const float weights[] = {  //weights in one dimension -> 33x33 filter
+							   //  -16           -15         -14          -13          -12          -11          -10           -9           -8           -7           -6           -5           -4           -3           -2           -1
+		0.00288204f, 0.00418319f, 0.00592754f, 0.00819980f, 0.01107369f, 0.01459965f, 0.01879116f, 0.02361161f, 0.02896398f, 0.03468581f, 0.04055144f, 0.04628301f, 0.05157007f, 0.05609637f, 0.05957069f, 0.06175773f,
+		//    0
+		0.06250444f,
+		//    1             2           3            4            5            6            7            8            9           10           11           12           13           14           15           16
+		0.06175773f, 0.05957069f, 0.05609637f, 0.05157007f, 0.04628301f, 0.04055144f, 0.03468581f, 0.02896398f, 0.02361161f, 0.01879116f, 0.01459965f, 0.01107369f, 0.00819980f, 0.00592754f, 0.00418319f, 0.00288204f
+	};
+
+	// 1 thread per output pixel
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (!threadIdx.x)
+		printf("x %d | y %d \n", x, y);
+
+	float sumR = 0.0f;
+	float sumG = 0.0f;
+	float sumB = 0.0f;
+
+	for (int i = -16; i <= 16; i++) {
+		if ((3 * (y + i) > 0) && (3 * (y + i) < 3 * height)) {
+			sumR += src[3 * (y + i)*inputPitch + 3 * x] * weights[i + 16];
+			sumG += src[3 * (y + i)*inputPitch + 3 * x + 1] * weights[i + 16];
+			sumB += src[3 * (y + i)*inputPitch + 3 * x + 2] * weights[i + 16];
+		}
+	}
+	if (!threadIdx.x) {
+		printf("sumR: %f | sumG: %f | sumB: %f \n", sumR, sumG, sumB);
+	}
+
+	dest[3 * y* outputPitch + 3 * x] = sumR;
+	dest[3 * y* outputPitch + 3 * x + 1] = sumG;
+	dest[3 * y* outputPitch + 3 * x + 2] = sumB;
 }
 
 void gaussian_blur(float* dest, const float* src, unsigned int width, unsigned int height)
@@ -189,7 +234,10 @@ void gaussian_blur(float* dest, const float* src, unsigned int width, unsigned i
 
 	int inputPitch = width;
 	int outputPitch = width;
+
 	blur_kernel_x << <num_blocks, block_size >> >(dest, src, width, height, inputPitch, outputPitch);
+	blur_kernel_y << <num_blocks, block_size >> >(dest, dest, width, height, inputPitch, outputPitch);
+
 }
 
 
