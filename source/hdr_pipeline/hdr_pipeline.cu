@@ -22,7 +22,6 @@ namespace
 	}
 }
 
-
 // kernel that computes average luminance of a pixel
 __global__ void luminance_kernel(float* dest, const float* input, unsigned int width, unsigned int height)
 {
@@ -60,7 +59,7 @@ void luminance(float* dest, const float* input, unsigned int width, unsigned int
 	// -> we need to allocate memory for a buffer in the HDRPipeline object declaration
 }
 
-__global__ void downsample_kernel(float* dest, float* input, unsigned int width, unsigned int height, unsigned int inputPitch, unsigned int outputPitch) {
+__global__ void downsample_kernel(float* dest, float* input, unsigned int width, unsigned int height, unsigned int outputPitch, unsigned int inputPitch) {
 	// each thread needs to know on which pixels to work -> get absolute coordinates of the thread in the grid
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -131,12 +130,10 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 	}
 
 	// return the grayscale value
-	//printf("grayscale value: %f \n", dest[0]);
 	float average;
 	cudaMemcpy(&average, dest, sizeof(float), cudaMemcpyDeviceToHost);
 	return average;
 }
-
 
 
 __global__ void blur_kernel(float* dest, const float* src, unsigned int width, unsigned int height)
@@ -186,7 +183,7 @@ __global__ void tonemap_kernel(float* tonemapped, float* brightpass, const float
 		tonemapped[3 * (y * width + x) + 2] = c_t.z;
 
 		// write out brightpass color
-		math::float3 c_b = luminance(c_t) > brightpass_threshold ? c_t : math::float3 {0.0f, 0.0f, 0.0f};
+		math::float3 c_b = luminance(c_t) > brightpass_threshold ? c_t : math::float3{ 0.0f, 0.0f, 0.0f };
 		brightpass[3 * (y * width + x) + 0] = c_b.x;
 		brightpass[3 * (y * width + x) + 1] = c_b.y;
 		brightpass[3 * (y * width + x) + 2] = c_b.z;
@@ -195,9 +192,9 @@ __global__ void tonemap_kernel(float* tonemapped, float* brightpass, const float
 
 void tonemap(float* tonemapped, float* brightpass, const float* src, unsigned int width, unsigned int height, float exposure, float brightpass_threshold)
 {
-	const auto block_size = dim3 { 32U, 32U };
+	const auto block_size = dim3{ 32U, 32U };
 
 	auto num_blocks = dim3{ divup(width, block_size.x), divup(height, block_size.y) };
 
-	tonemap_kernel<<<num_blocks, block_size>>>(tonemapped, brightpass, src, width, height, exposure, brightpass_threshold);
+	tonemap_kernel << <num_blocks, block_size >> >(tonemapped, brightpass, src, width, height, exposure, brightpass_threshold);
 }
