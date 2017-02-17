@@ -115,14 +115,11 @@ float downsample(float* dest, float* luminance, unsigned int width, unsigned int
 		height = height / 2;
 		if (width < 1) {
 			width = 1;
-			printf("width < 1 \n");
 		}
 		if (height < 1) {
 			height = 1;
-			printf("height < 1 \n");
 		}
 
-		printf(" width %d | height %d \n", width, height);
 		if (ping) {
 			downsample_kernel << <num_blocks, block_size >> >(dest, luminance, width, height, pitchBuf, pitchLuminance);
 		}
@@ -162,8 +159,6 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (!threadIdx.x)
-		printf("x %d | y %d \n", x, y);
 
 	float sumR = 0.0f;
 	float sumG = 0.0f;
@@ -175,9 +170,6 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 			sumG += src[3 * y*inputPitch + 3 * (x + i) + 1] * weights[i + 16];
 			sumB += src[3 * y*inputPitch + 3 * (x + i) + 2] * weights[i + 16];
 		}
-	}
-	if (!threadIdx.x) {
-		printf("sumR: %f | sumG: %f | sumB: %f \n", sumR, sumG, sumB);
 	}
 
 	dest[3 * y* outputPitch + 3 * x] = sumR;
@@ -200,8 +192,6 @@ __global__ void blur_kernel_y(float* dest, const float* src, unsigned int width,
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (!threadIdx.x)
-		printf("x %d | y %d \n", x, y);
 
 	float sumR = 0.0f;
 	float sumG = 0.0f;
@@ -214,10 +204,6 @@ __global__ void blur_kernel_y(float* dest, const float* src, unsigned int width,
 			sumB += src[3 * (y + i)*inputPitch + 3 * x + 2] * weights[i + 16];
 		}
 	}
-	if (!threadIdx.x) {
-		printf("sumR: %f | sumG: %f | sumB: %f \n", sumR, sumG, sumB);
-	}
-
 	dest[3 * y* outputPitch + 3 * x] = sumR;
 	dest[3 * y* outputPitch + 3 * x + 1] = sumG;
 	dest[3 * y* outputPitch + 3 * x + 2] = sumB;
