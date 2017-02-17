@@ -162,21 +162,21 @@ __global__ void blur_kernel_x(float* dest, const float* src, unsigned int width,
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	float sum = 0.0f;
+	float sum[3] = { 0 };
 
 //	for (int i = 0, l = sizeof(weights) / sizeof(float); i < l; i++) {
+	
 	for (int i = 0, l = 32; i < l; i++) {
 		if ((i + x - l/2 >= 0) && (i + x + l/2 < width)) {
-			sum += src[y*inputPitch + x + i] * weights[i];
-			if (!threadIdx.x && !threadIdx.y) {
-				for (int b = 0; b < 32; b++) {
-					printf("%f (%f), ", src[y*inputPitch + x + i], weights[i]);
-				}
-				printf("\nSum %f\n", sum);
-			}
+			sum[0] += src[3 * y*inputPitch + 3 * x + i + 0] * weights[i];
+			sum[1] += src[3 * y*inputPitch + 3 * x + i + 1] * weights[i];
+			sum[2] += src[3 * y*inputPitch + 3 * x + i + 2] * weights[i];
 		}
 	} 
-	dest[y* outputPitch + x] = sum;
+	if (!threadIdx.x && !threadIdx.y) if (sum[0] != 0 || sum[1] != 0 || sum[2] != 0) printf("[%f, %f, %f]\n", sum[0],sum[1],sum[2]);
+	dest[3 * y * outputPitch + 3 * x + 0] = sum[0];
+	dest[3 * y * outputPitch + 3 * x + 1] = sum[1];
+	dest[3 * y * outputPitch + 3 * x + 2] = sum[2];
 }
 
 void gaussian_blur(float* dest, const float* src, unsigned int width, unsigned int height)
